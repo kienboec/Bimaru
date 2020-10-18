@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using Bimaru.Logic;
+using Bimaru.Logic.RemoteObjects;
 
 namespace Bimaru.Console
 {
@@ -8,8 +9,8 @@ namespace Bimaru.Console
     {
         static void Main(string[] args)
         {
-            IPitchProvider provider = new RemotePitchProvider();
-            var pitch = new Pitch(provider.GetNextPitchRaw());
+            using IPitchProvider provider = new RemotePitchProvider();
+            var pitch = provider.GetNextPitch();
 
             string command = null;
             do
@@ -22,8 +23,7 @@ namespace Bimaru.Console
                         if (int.TryParse(parts[0], out int x) && 
                             int.TryParse(parts[1], out int y))
                         {
-                            int index = (x - 1) + (y - 1) * Pitch.XDimension;
-                            pitch.Toggle(index);
+                            var index = pitch.Toggle(x, y);
                             System.Console.WriteLine($"Field at index {index} set");
                             System.Console.WriteLine();
                             if (pitch.IsSolved())
@@ -39,6 +39,9 @@ namespace Bimaru.Console
                 System.Console.Write("toggle: ");
             }
             while ((command = System.Console.ReadLine()) != "quit");
+
+            System.Console.WriteLine("press any key to continue");
+            System.Console.ReadLine();
         }
     }
 }

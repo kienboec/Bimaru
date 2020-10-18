@@ -4,8 +4,9 @@ using System.Text;
 
 namespace Bimaru.Logic
 {
-    public interface IPitchProvider
+    public interface IPitchProvider : IDisposable
     {
-        string GetNextPitchRaw();
+        IPitch GetNextPitch();
+        void Close();
     }
 }

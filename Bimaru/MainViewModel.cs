@@ -9,14 +9,7 @@ namespace Bimaru
 {
     public class MainViewModel : ViewModelBase
     {
-        private IPitchProvider _provider;
-        
-        public Pitch _pitch;
-        public Pitch Pitch
-        {
-            get => _pitch;
-            set => Set(ref _pitch, value, nameof(Pitch));
-        }
+        public IPitch Pitch { get; }
 
         private string _message;
         public string Message
@@ -29,8 +22,7 @@ namespace Bimaru
 
         public MainViewModel()
         {
-            _provider = new RawPitchProvider();
-            Pitch = new Pitch(_provider.GetNextPitchRaw());
+            Pitch = ServiceLocator.PitchProvider.GetNextPitch();
             ToggleCommand = new RelayCommand<string>(index =>
             {
                 Pitch.Toggle(int.Parse(index));

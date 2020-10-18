@@ -1,12 +1,10 @@
 ﻿using System;
 using System.IO;
-using System.Numerics;
-using System.Runtime.Serialization;
 using System.Text;
 
-namespace Bimaru.Logic
+namespace Bimaru.Logic.Local
 {
-    public class Pitch
+    public class Pitch : IPitch
     {
         public const int XDimension = 6;
         public const int YDimension = 6;
@@ -31,6 +29,12 @@ namespace Bimaru.Logic
                         continue;
                     }
 
+                    if ((mode == 0) && line.Trim() == "123456")
+                    {
+                        // optional column-description
+                        continue;
+                    }
+
                     if ((mode == 0 || mode == 2) && line.Trim() == "+------+")
                     {
                         mode++;
@@ -38,18 +42,19 @@ namespace Bimaru.Logic
                     }
 
                     if (mode == 1 &&
-                             line.StartsWith('|') &&
-                             line[7] == '|' &&
-                             char.IsDigit(line[8]))
+                        char.IsDigit(line[0]) && 
+                        line[1] == '|' &&
+                        line[8] == '|' &&
+                        char.IsDigit(line[9]))
                     {
                         for (int i = 0; i < XDimension; i++)
                         {
-                            switch (line[1 + i])
+                            switch (line[2 + i])
                             {
                                 case ' ':
                                 case 'O':
                                 case 'X':
-                                    this.Field[y * XDimension + i] = line[1 + i];
+                                    this.Field[y * XDimension + i] = line[2 + i];
                                     break;
                                 default:
                                     throw new InvalidDataException(
@@ -57,7 +62,7 @@ namespace Bimaru.Logic
                             }
                         }
 
-                        LineConstraints[y] = int.Parse(line[8].ToString());
+                        LineConstraints[y] = int.Parse(line[9].ToString());
 
                         y++;
                         if (y == 6)
@@ -68,16 +73,16 @@ namespace Bimaru.Logic
                         continue;
                     }
 
-                    if (mode == 3 && line.StartsWith(' '))
+                    if (mode == 3 && line.StartsWith("  "))
                     {
                         for (int i = 0; i < XDimension; i++)
                         {
-                            if (!char.IsDigit(line[1 + i]))
+                            if (!char.IsDigit(line[2 + i]))
                             {
                                 throw new InvalidDataException("invalid column constraints");
                             }
 
-                            this.ColumnConstraints[i] = int.Parse(line.Substring(1 + i, 1));
+                            this.ColumnConstraints[i] = int.Parse(line.Substring(2 + i, 1));
                         }
 
                         mode++;
@@ -91,8 +96,9 @@ namespace Bimaru.Logic
                     }
 
                     throw new InvalidDataException("invalid line start in line '" + line + "'");
-
                 }
+
+                AdditionalInfo = AdditionalInfo?.Trim();
             }
             catch (Exception exc)
             {
@@ -100,7 +106,17 @@ namespace Bimaru.Logic
             }
         }
 
-        public void Toggle(in int index)
+        public int CalcIndex(int x, int y)
+        {
+            return (x - 1) + (y - 1) * Pitch.XDimension;
+        }
+
+        public int Toggle(int x, int y)
+        {
+            return Toggle(CalcIndex(x,y));
+        }
+
+        public int Toggle(in int index)
         {
             switch (this.Field[index])
             {
@@ -114,6 +130,8 @@ namespace Bimaru.Logic
                     this.Field[index] = ' ';
                     break;
             }
+
+            return index;
         }
 
         public override string ToString()
@@ -145,9 +163,9 @@ namespace Bimaru.Logic
 
             builder.AppendLine();
             builder.AppendLine(this.AdditionalInfo);
-            builder.AppendLine();
 
-            return builder.ToString();
+            var returnValue = builder.ToString();
+            return returnValue;
         }
         public bool IsSolved()
         {
